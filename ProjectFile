@@ -1,0 +1,650 @@
+#Libraries to use for classification - I may use most, but not all of them
+#For the project I attached copies of this code - I tested my algorithms with less and specific columns
+
+import pandas as pd  
+import numpy as np  
+import matplotlib.pyplot as plt  
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split 
+from sklearn import metrics
+
+import seaborn as sns
+
+from sklearn.metrics import ConfusionMatrixDisplay
+
+from sklearn import naive_bayes #Naive Bayes
+from sklearn.linear_model import LogisticRegression
+
+import time #Will be used to measure time of classification algorithms
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
+import os
+from sklearn.externals.six import StringIO  
+from IPython.display import Image  
+from sklearn.tree import export_graphviz
+import pydotplus
+from sklearn.svm import SVC
+from sklearn.ensemble import GradientBoostingClassifier 
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.model_selection import train_test_split 
+from sklearn import metrics
+
+from sklearn.metrics import ConfusionMatrixDisplay
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsRegressor
+
+from sklearn.model_selection import train_test_split 
+from sklearn import metrics
+from sklearn.metrics import ConfusionMatrixDisplay
+
+from sklearn.ensemble import GradientBoostingClassifier 
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import GridSearchCV
+
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import RandomizedSearchCV
+
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor
+
+from sklearn.model_selection import learning_curve
+
+#For turning the parameters, I used grid search parameter tuning and random search parameter tuning.
+
+#I ran most algrithms ten times
+
+#20% of the data was used for testing, the rest for training
+
+Average_time_total = [] #Will use to store all average times of all agorithms
+Algorithm_types = [] #List of names of algorithms used in the project
+Test_Accuracy = [] #List of all test accuracy results 
+Train_Accuracy = [] #List of all train accuracies
+
+#The following algorithms were tested with dataset:
+
+# Naive Bayes - Gaussian, Complement, and Complement Bournoulli
+# Support Vector classifier
+# Logistic Regression
+# Multiclass logistic Regression
+# Multinomial Regression
+# KNN Classifier
+# Decision Tree
+# Random Forest Regression
+
+adver = pd.read_csv("advertising.csv") #load the dataset
+#The dataset predicts who clicked on an ad for a product based on a number of factors,
+#including the person's age, daily internet usage, city and gender
+#This was written in cells in anaconda
+
+#For the final column, a 1 means the person clicked on the ad. A 0 means they did not
+
+adver.head(5)
+
+#Clean the data for data set
+col_names = ['timespent', 'age', 'income', 'usage', 'topic line', 'city', 'male', 'country', 'timestamp', 'clicked'] #Column names
+
+adver.columns = col_names
+
+adver.head(5)
+
+feature_cols = ['timespent','age','income','usage','male'] 
+# Testing out algorithms with some columns, and the final column to be tested is all of them
+
+#No null values
+#Other columns were text, so I removed them
+X = adver[feature_cols] 
+
+#y = pima.label
+y = adver.iloc[:,-1] # Target variable - If a person clicked on the ad
+
+#Preparing for training and testing the data from the set for the algrorithms - 20% test
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.20, random_state=0) 
+
+#I found two ways to perform tuning on my data for the project
+
+#Grid Search Parameter Tuning
+alphas = np.array([1,0.1,0.01,0.001,0.0001,0])
+model = Ridge()
+grid = GridSearchCV(estimator=model, param_grid=dict(alpha=alphas))
+grid.fit(X, y)
+print(grid)
+
+#Random Search Parameter Tuning
+from scipy.stats import uniform as sp_rand
+
+param_grid = {'alpha': sp_rand()}
+# create and fit a ridge regression model, testing random alpha values
+model = Ridge()
+rsearch = RandomizedSearchCV(estimator=model, param_distributions=param_grid, n_iter=100)
+rsearch.fit(X, y)
+print(rsearch)
+# summarize the results of the random parameter search
+print(rsearch.best_score_)
+print(rsearch.best_estimator_.alpha)
+
+#Gaussian Naive Bayes
+
+times = []
+train_values = []
+test_values = []
+
+#This is done for most algorithms - run the algorithm ten times then store the results in lists
+
+for i in range(10):
+    start = time.time()
+
+    NBayes = naive_bayes.GaussianNB()
+    NBayes.fit(X_train,y_train)
+
+    y_pred_Train = NBayes.predict(X_train) 
+    y_pred_Test = NBayes.predict(X_test) 
+
+    train1 = metrics.accuracy_score(y_train,y_pred_Train)
+    test1 = metrics.accuracy_score(y_test, y_pred_Test)
+    
+    end = time.time()
+    times.append(end-start)
+    train_values.append(train1)
+    test_values.append(test1)
+
+avgTime = sum(times)/len(times)
+trainAvg = sum(train_values)/len(train_values)
+testAvg = sum(test_values)/len(test_values)
+
+cm = metrics.confusion_matrix(y_test, y_pred_Test)
+classes = ['0','1']
+
+print('Average time of Naive Bayes Algorithm: ' + str(avgTime))
+print('Average train accuracy: ' + str(trainAvg))
+print('Average test accuracy: ' + str(testAvg))
+
+ConfusionMatrixDisplay(cm,classes).plot()
+
+Average_time_total.append(avgTime)
+Algorithm_types.append('Gaussian Naive Bayes')
+Train_Accuracy.append(trainAvg)
+Test_Accuracy.append(testAvg)
+#.003 seconds to run algorithm - very fast
+#Both the training and testing had very high accuracy (around 97%), showing this is a good algorithm to use
+
+#Complement Naive Bayes
+
+times = []
+train_values = []
+test_values = []
+
+for i in range(10):
+    start = time.time()
+
+    NBayes = naive_bayes.ComplementNB()
+    NBayes.fit(X_train,y_train)
+
+    y_pred_Train = NBayes.predict(X_train) 
+    y_pred_Test = NBayes.predict(X_test) 
+    
+    train1 = metrics.accuracy_score(y_train,y_pred_Train)
+    test1 = metrics.accuracy_score(y_test, y_pred_Test)
+    
+    end = time.time()
+    times.append(end-start)
+    train_values.append(train1)
+    test_values.append(test1)
+    
+avgTime = sum(times)/len(times)
+trainAvg = sum(train_values)/len(train_values)
+testAvg = sum(test_values)/len(test_values)
+
+print('Average Time of Naive Bayes Algorithm: ' + str(avgTime))
+print('Average test value: ' + str(trainAvg))
+print('Average test value: ' + str(testAvg))
+
+cm = metrics.confusion_matrix(y_test, y_pred_Test)
+classes = ['0','1']
+
+ConfusionMatrixDisplay(cm,classes).plot()
+Average_time_total.append(avgTime)
+Algorithm_types.append('Complement Naive Bayes')
+Train_Accuracy.append(trainAvg)
+Test_Accuracy.append(testAvg)
+#.003 seconds to run algorithm - very fast algorithm
+#Around 85% accuracy - good, but not as good as Gaussian Naive
+
+#Support Vector Classifier
+
+times = []
+train_values = []
+test_values = []
+
+for i in range(10):
+    start = time.time()
+
+    SVector = SVC() 
+    SVector.fit(X_train,y_train)
+
+    y_pred_Train = SVector.predict(X_train) 
+    y_pred_Test = SVector.predict(X_test) 
+
+    train1 = metrics.accuracy_score(y_train,y_pred_Train)
+    test1 = metrics.accuracy_score(y_test, y_pred_Test)
+    
+    end = time.time()
+    times.append(end-start)
+    train_values.append(train1)
+    test_values.append(test1)
+
+avgTime = sum(times)/len(times)
+trainAvg = sum(train_values)/len(train_values)
+testAvg = sum(test_values)/len(test_values)
+
+print('Average Time of Support Vector Classifier: ' + str(avgTime))    
+print('Average train value: ' + str(trainAvg))
+print('Average test value: ' + str(testAvg))
+
+cm = metrics.confusion_matrix(y_test, y_pred_Test)
+classes = ['0','1']
+
+Average_time_total.append(avgTime)
+Train_Accuracy.append(trainAvg)
+Test_Accuracy.append(testAvg)
+
+ConfusionMatrixDisplay(cm,classes).plot()
+
+#Around 70% accuracy for both training and testing 
+#Average time of .2 seconds to run algorithm
+
+#Multiclass logistic regression 
+
+times = []
+train_values = []
+test_values = []
+
+for i in range(10):
+    start = time.time()
+
+    MulticlassReg = LogisticRegression()
+    MulticlassReg.fit(X_train,y_train)
+
+    y_pred_Train = MulticlassReg.predict(X_train)
+    y_pred_Test = MulticlassReg.predict(X_test)
+
+    y_pred_proba = MulticlassReg.predict_proba(X_test)[::,1] 
+    
+    train1 = metrics.accuracy_score(y_train,y_pred_Train)
+    test1 = metrics.accuracy_score(y_test, y_pred_Test)
+    
+    end = time.time()
+    times.append(end-start)
+    train_values.append(train1)
+    test_values.append(test1)
+    
+avgTime = sum(times)/len(times)
+trainAvg = sum(train_values)/len(train_values)
+testAvg = sum(test_values)/len(test_values)
+    
+print('Time of Multiclass Logistics Algorithm: ' + str(avgTime))
+print('Average train value: ' + str(trainAvg))
+print('Average test value: ' + str(testAvg))
+
+cm = metrics.confusion_matrix(y_train, y_pred_Train)
+class_names=[0,1] 
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+# create heatmap
+sns.heatmap(pd.DataFrame(cm), annot=True, cmap="YlGnBu" ,fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+ax.set_ylim(2,0)
+plt.title('Confusion matrix of Multiclass Logistic Regression', y=1.1)
+plt.ylabel('Actual label')
+plt.xlabel('Predicted label')
+
+Average_time_total.append(avgTime)
+Algorithm_types.append('Multiclass Logistic Regression')
+Train_Accuracy.append(trainAvg)
+Test_Accuracy.append(testAvg)
+#Around .019 seconds to run algrorithm - very fast algorithm, even faster than naive bayes
+
+#Complement Bernoulli Bayes
+
+times = []
+train_values = []
+test_values = []
+
+for i in range(10):
+
+    start = time.time()
+
+    NBayes = naive_bayes.BernoulliNB()
+    NBayes.fit(X_train,y_train)
+
+    y_pred_Train = NBayes.predict(X_train) #Predictions
+    y_pred_Test = NBayes.predict(X_test) #Predictions
+    
+    train1 = metrics.accuracy_score(y_train,y_pred_Train)
+    test1 = metrics.accuracy_score(y_test, y_pred_Test)
+
+    end = time.time()
+    times.append(end-start)
+    train_values.append(train1)
+    test_values.append(test1)
+
+cm = metrics.confusion_matrix(y_test, y_pred_Test)
+classes = ['0','1']
+
+avgTime = sum(times)/len(times)
+trainAvg = sum(train_values)/len(train_values)
+testAvg = sum(test_values)/len(test_values)
+
+print('Time of Multiclass Logistics Algorithm: ' + str(avgTime))
+print('Average train value: ' + str(trainAvg))
+print('Average test value: ' + str(testAvg))
+
+ConfusionMatrixDisplay(cm,classes).plot()
+Average_time_total.append(end-start)
+Algorithm_types.append('Complement Bernoulli Bayes')
+Train_Accuracy.append(trainAvg)
+Test_Accuracy.append(testAvg)
+#.003 seconds to run algorithm - very fast method
+#Around 52% accuracy for training and testing - not good
+
+#Multinomial Regression
+
+start = time.time()
+MultinomialReg = LogisticRegression(multi_class='multinomial', solver='newton-cg')
+MultinomialReg.fit(X_train,y_train)
+
+y_pred_Train = MultinomialReg.predict(X_train)
+y_pred_Test = MultinomialReg.predict(X_test)
+
+y_pred_proba = MulticlassReg.predict_proba(X_test)[::,1] 
+
+print ('Multinomial regression Train Accuracy :', metrics.accuracy_score(y_train,y_pred_Train))
+print ('Multinomial regression Test Accuracy: ', metrics.accuracy_score(y_test, y_pred_Test))
+
+end = time.time()
+print(end-start)
+
+cm = metrics.confusion_matrix(y_test, y_pred_Test)
+class_names=[0,1] # name  of classes
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+# create heatmap
+sns.heatmap(pd.DataFrame(cm), annot=True, cmap="YlGnBu" ,fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+ax.set_ylim(2,0)
+plt.title('Confusion matrix of multinomial regression', y=1.1)
+plt.ylabel('Actual label')
+plt.xlabel('Predicted label')
+Average_time_total.append(end-start)
+Algorithm_types.append('Multinomial Regression')
+Train_Accuracy.append(metrics.accuracy_score(y_train,y_pred_Train))
+Test_Accuracy.append(metrics.accuracy_score(y_test, y_pred_Test))
+#Around .26 time complexity to run algortihm
+#Very Accurate with data - around 97% accuracy
+
+#Data preparations for Decision Tree 
+
+X = adver.iloc[:,0] # Features
+y = adver.iloc[:,1] # Target variable
+
+X = X.values.reshape(-1, 1)
+y = y.values.reshape(-1, 1)
+
+# split X and y into training and testing sets - 20% test size
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.20, random_state=0) 
+
+#Decision Tree
+
+times = []
+for i in range(10):
+    
+    start = time.time()
+
+    LReg = DecisionTreeRegressor()
+    LReg.fit(X_train, y_train)
+
+    y_pred_Train = LReg.predict(X_train)
+    y_pred_Test = LReg.predict(X_test)
+
+    end = time.time()
+    print('Iteration ' + str(i) + ': ' + str(end-start))
+    times.append(end-start)
+    plt.scatter(X_test, y_test) #Green color
+    plt.scatter(X_test, y_pred_Test) #Blue color
+
+print('Average Time for Decision Tree after 10 iterations: ' + str(sum(times)/len(times)))
+
+print('R squared:', np.sqrt(metrics.r2_score(y_test, y_pred_Test)))
+print('Mean Absolute Error:', metrics.mean_absolute_error(y_test, y_pred_Test))  
+print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred_Test))  
+print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred_Test)))
+Average_time_total.append(sum(times)/len(times))
+Algorithm_types.append('Decision Tree Regressor')
+#.003 seconds to run
+
+#Random forest regressor
+
+times = []
+for i in range(10):
+    start = time.time()
+
+    RegForest = RandomForestRegressor(n_estimators=10) 
+    RegForest.fit(X_train, y_train)
+
+    y_pred_Train = RegForest.predict(X_train)
+    y_pred_Test = RegForest.predict(X_test) 
+
+    end = time.time()
+    
+    print('Iteration ' + str(i) + ': ' + str(end-start))
+    times.append(end-start)
+    
+    plt.scatter(X_test, y_test) 
+    plt.scatter(X_test, y_pred_Test) #Both test 
+    
+print('Average Time for Decision Tree after 10 iterations: ' + str(sum(times)/len(times)))
+
+print('R squared:', np.sqrt(metrics.r2_score(y_test, y_pred_Test)))
+print('Mean Absolute Error:', metrics.mean_absolute_error(y_test, y_pred_Test))  
+print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred_Test))  
+print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred_Test)))
+
+Average_time_total.append(sum(times)/len(times))
+Algorithm_types.append('Random Forest Regression')
+plt.scatter(X_test, y_test)
+plt.scatter(X_test, y_pred_Test)
+
+#KNN Classifier
+
+train_acc = []
+pred_acc = []
+K = list(range(1,20, 5))
+
+for k in K:
+
+    KNN = KNeighborsClassifier(n_neighbors=k)
+    KNN.fit(X_train,y_train)
+    
+    y_pred_Train = KNN.predict(X_train) 
+    y_pred_Test = KNN.predict(X_test) 
+        
+    train_acc.append(metrics.accuracy_score(y_train,y_pred_Train))
+    pred_acc.append(metrics.accuracy_score(y_test, y_pred_Test))
+       
+plt.plot(K,train_acc,'b')
+plt.plot(K,pred_acc,'r')
+plt.xticks(K)
+plt.xlabel('K')
+plt.ylabel('Accuracy')
+plt.title('KNN Neighbors Classifier of Advertising File')
+plt.show()
+
+#Train is blue, Test is red – Test results descreases to around 70% while training results goes down to around 67% 
+
+train_acc = []
+pred_acc = []
+K = list(range(1,10,5))
+
+for k in K:
+    GBoost = GradientBoostingClassifier(n_estimators = k)
+    GBoost.fit(X_train, y_train)
+    
+    y_pred_Train = GBoost.predict(X_train)
+    y_pred_Test = GBoost.predict(X_test)
+
+    train_acc.append(metrics.accuracy_score(y_train,y_pred_Train))
+    pred_acc.append(metrics.accuracy_score(y_test, y_pred_Test))
+    
+plt.plot(K,train_acc,'g')
+plt.plot(K,pred_acc,'r')
+plt.xlabel('K')
+plt.ylabel('Accuracy')
+plt.title('Gradient Boosting Classifier of Advertising File')
+plt.xticks(K)
+plt.show()
+
+#Training is green, and testing is red – Training results increased to around 98%, while didn't change - around 95%
+
+#Extra Tree Regressor
+
+ExtraTree = ExtraTreesRegressor(8) #8 trees in forest
+ExtraTree.fit(X_train, y_train)
+
+y_pred_Train = ExtraTree.predict(X_train) #Predictions
+y_pred_Test = ExtraTree.predict(X_test) #Predictions
+
+print('R squared:', np.sqrt(metrics.r2_score(y_test, y_pred_Test)))
+print('Mean Absolute Error:', metrics.mean_absolute_error(y_test, y_pred_Test))  
+print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred_Test))  
+print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred_Test)))
+
+RegForest = RandomForestRegressor(8) #8 trees in forest
+RegForest.fit(X_train, y_train)
+
+y_pred_Train = RegForest.predict(X_train) 
+y_pred_Test = RegForest.predict(X_test) 
+
+print('R squared:', np.sqrt(metrics.r2_score(y_test, y_pred_Test)))
+print('Mean Absolute Error:', metrics.mean_absolute_error(y_test, y_pred_Test))  
+print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred_Test))  
+print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred_Test)))
+
+#Logistic regression
+
+logistic = LogisticRegression() 
+logistic.fit(X_train,y_train)   
+
+y_pred=logistic.predict(X_test)
+print(y_pred)
+
+#Confusion matrix of test data
+
+Confusion_matrix = metrics.confusion_matrix(y_test, y_pred)
+print(Confusion_matrix)
+
+class_names=[0,1]
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+# create heatmap
+sns.heatmap(pd.DataFrame(Confusion_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+ax.set_ylim(2,0)
+plt.title('Confusion matrix of advertising data set', y=1.1)
+plt.ylabel('Actual label')
+plt.xlabel('Predicted label')
+
+#100 true positive, 8 false positive, 13 false negative, 79 true negative
+
+#Metrics
+
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Precision:",metrics.precision_score(y_test, y_pred))
+print("Recall:",metrics.recall_score(y_test, y_pred))
+#Data set is 90% accurate
+#90-95% of the predictions were correct
+
+#ROC Curve
+
+y_pred_proba = logistic.predict_proba(X_test)[::,1] 
+
+fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
+auc = metrics.roc_auc_score(y_test, y_pred_proba)
+
+plt.plot(fpr,tpr,label="data 1, auc="+str(auc))
+plt.ylabel('tpr')
+plt.xlabel('fpr')
+plt.legend(loc=4)
+plt.title('ROC Curve of Advertising Data Set')
+plt.show()
+#The curve stretches out, but not that far - a good model 
+
+#comparison of average algorithm times
+    
+x = [i for i in Average_time_total]
+y = [j for j in Algorithm_types]
+thedict = dict(zip(y, x))
+#keys, counts = np.unique(x, return_counts=True)
+
+fig = plt.figure(figsize=(5.5,3),dpi=300)
+ax = fig.add_subplot(111)
+ax.grid(True,which='both')
+bar = ax.barh(range(1,len(thedict)+1,1),thedict.values(),0.4,align='center')
+plt.title('Average amount of time to run algorithms for data analysis (bar graph)')
+plt.yticks(range(1,len(thedict)+1,1), thedict.keys(), size='small')
+
+#Box and whisker representation 
+fig = plt.figure(1, figsize=(9, 6))
+
+ax = fig.add_subplot(111)
+
+# Create the boxplot
+bp = ax.boxplot(Average_time_total)
+plt.title('Average amount of time to run algorithms for data analysis (box and whisker plot)')
+
+fig = plt.figure(1, figsize=(9, 6))
+
+ax = fig.add_subplot(111)
+
+bp = ax.boxplot(Train_Accuracy)
+plt.title('Average amount of accuracy for all algorithms (training)')
+fig = plt.figure(1, figsize=(9, 6))
+
+#The results are of the data set are most accurate when all quantitative columns are used.
+
+#The most important column for accuracy appears to be 'timespent'
+
+#Of the three times using Naïve Bayes algorithm, Gaussian showed the best results.
+
+#Gradient Boosting Classifier displayed better results than using KNN classification.
+
+#All of the algorithms ran extremely fast with the advertising data set – 
+#all of the algorithms had an average time of less than a second. 
+#Of all the algorithms, multinomial regression ran the slowest (but was still very fast).
+
+#The decision tree algorithms, however, displayed incorrect results when I tried using the algorithm.
+#I believe this is because there are too few arguments I used from the data set.
+
+#Overall, the best algorithms to use for this data set are:
+
+#    •Gradient Boosting Classifier
+#    •Extra Tree Regressor
+#    •Naïve Bayes Gaussian
+#    •Logistic Regression
